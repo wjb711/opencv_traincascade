@@ -7,16 +7,16 @@ import os,cv2,easygui as g
 
 def resize(folder,width,high):
     os.chdir(folder)
+    t=0
     for b in os.listdir():
-        if b.endswith('.jpg'):
-            pic=cv2.imread(b)
-            if pic.shape==(high,width,3):
+        pic=cv2.imread(b)
+        if pic.shape==(high,width,3):
 
-                print ('y',pic.shape)
-            else:
-                re=cv2.resize(pic,(width,high))
-                print ('n',pic.shape)
-                cv2.imwrite(b,re)
+            print ('y',pic.shape)
+        else:
+            re=cv2.resize(pic,(width,high))
+            print ('n',pic.shape)
+            cv2.imwrite(b,re)
     os.chdir('../')
 def precondition():
     #判断是否存在pos正样本文件夹，neg负样本文件夹，dr，最终目标文件夹
@@ -29,6 +29,7 @@ def precondition():
             #g.msgbox('正样本数量为 '+str(a[1])+'\n'+'最低要求数量为'+str(pos_min_number))
             global pos_real_num
             pos_real_num=a[1]
+            g.msgbox('欢迎使用样本训练系统。'+'\n'+'正样本数量为'+str(a[1])+'\n'+'最低要求量为'+str(pos_min_number)+'\n'+'注意文件名称不能带有中文和特殊符号')
         else:
             return False
     else:
@@ -39,6 +40,7 @@ def precondition():
             #g.msgbox('负样本数量为 '+str(c[1])+'\n'+'最低要求数量为'+str(neg_min_number))
             global neg_real_num
             neg_real_num=c[1]
+            g.msgbox('负样本数量为'+str(c[1]))
         else:
             return False
     else:
@@ -51,23 +53,22 @@ def precondition():
             
 def exist(location,houzhui,min_num):
     i=0
-    print ('location is ',location)
     for b in os.listdir(location):
-            print (b)
-            i=i+1
+        #if b.endswith(houzhui):
+        i=i+1
     
-    print ('total number is',i)
+    
     if i>=min_num:
         return True,i
     else:
-        g.msgbox(location+' '+houzhui+'样本数量不足 '+str(min_num)+'\n'+'最低要求数量为'+str(neg_min_number))
+        g.msgbox(location+' '+houzhui+'样本数量不足 '+str(min_num)+'\n'+'最低要求数量为'+str(min_number))
         return False
         
 
 def pos_text():
     with open("pos.txt","w") as f:
         for b in os.listdir('pos'):
-            print ('pos'+'/'+b+' 1 0 0 '+str(pos_width)+' '+str(pos_high))
+            #print ('pos'+'/'+b+' 1 0 0 '+str(pos_width)+' '+str(pos_high))
 
             f.write('pos'+'/'+b+' 1 0 0 '+str(pos_width)+' '+str(pos_high)+'\n')        
 
@@ -75,35 +76,44 @@ def pos_text():
 def neg_text():
     with open("neg.txt","w") as f:
         for b in os.listdir('neg'):
-            print ('neg'+'/'+b)
+            #print ('neg'+'/'+b)
 
             f.write('neg'+'/'+b+'\n')             
-    
-pos_high=19
-pos_width=78
-neg_high=19
-neg_width=78
+pos_width=int(g.enterbox(msg='输入正样本宽度', default='40'))
+pos_high=int(g.enterbox(msg='输入正样本高度', default='40') )
+stage=g.enterbox(msg='输入stage层数', default='16') 
+#pos_high=40
+#pos_width=40
+#neg_high=19
+#neg_width=78
 #正样本最低数量
 pos_min_number=10
 #负样本最低数量
-neg_min_number=50       
+neg_min_number=50
+#stage=16
+#stage=str(stage)
 if __name__=='__main__':
-    #主程序
     precondition()
-    #判断是否存在pos正样本文件夹，neg负样本文件夹，dr，最终目标文件夹
     pos_text()
     neg_text()
     resize('pos',pos_width,pos_high)
     #resize('neg',neg_width,neg_high)
-    print ('.\\bin\\opencv_createsamples.exe -info pos.txt -bg neg.txt -maxidev 40 -maxxangle 1.100000 -maxyangle 1.100000 -maxzangle 0.5 -num '+str(pos_real_num)+' -vec pos.vec -w '+str(pos_width)+' -h '+str(pos_high))
-    os.system('.\\bin\\opencv_createsamples.exe -info pos.txt -bg neg.txt -maxidev 40 -maxxangle 1.100000 -maxyangle 1.100000 -maxzangle 0.5 -num '+str(pos_real_num)+' -vec pos.vec -w '+str(pos_width)+' -h '+str(pos_high))
+    print ('.\\bin\\opencv_createsamples.exe -info pos.txt -bg neg.txt -maxidev 60 -maxxangle 1.100000 -maxyangle 1.100000 -maxzangle 0.5 -num '+str(pos_real_num)+' -vec pos.vec -w '+str(pos_width)+' -h '+str(pos_high))
+    os.system('.\\bin\\opencv_createsamples.exe -info pos.txt -bg neg.txt -maxidev 40 -maxxangle 1.500000 -maxyangle 1.500000 -maxzangle 0.5 -num '+str(pos_real_num)+' -vec pos.vec -w '+str(pos_width)+' -h '+str(pos_high))
     print ('done')
     #print ('.\\bin\\opencv_haartraining.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 16 -precalcValbufSize 4096 -precalcdxBufSize 4096 -featureType LBP')
     #os.system('.\\bin\\opencv_haartraining.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 16 -precalcValbufSize 4096 -precalcdxBufSize 4096 -featureType LBP')
     #print ('done all')
     print ('.\\bin\\opencv_traincascade.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 20 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -mode ALL -precalcValbufSize 4096 -precalcdxBufSize 4096 -featureType LBP -w '+str(pos_width)+' -h '+str(pos_high))
     #os.system('.\\bin\\opencv_traincascade.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 16 -precalcValbufSize 4096 -precalcdxBufSize 4096 -w '+str(pos_width)+' -h '+str(pos_high))
-    os.system('.\\bin\\opencv_traincascade.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 15 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -weightTrimRate 0.95 -maxDepth 1 -mode ALL -precalcValbufSize 4096 -precalcdxBufSize 4096 -featureType LBP -w '+str(pos_width)+' -h '+str(pos_high))
+    #os.system('.\\bin\\opencv_traincascade.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages 25 -minHitRate 0.999 -maxFalseAlarmRate 0.5 -weightTrimRate 0.95 -maxDepth 1 -mode ALL -precalcValbufSize 4096 -precalcdxBufSize 4096 -featureType LBP -w '+str(pos_width)+' -h '+str(pos_high))
+    
+    #print ('done all')
+    LBP=g.buttonbox('LBP on or off?',choices=(' -featureType LBP',''))
+    #LBP=''
+    #LBP=' -featureType LBP'
+    os.system('.\\bin\\opencv_traincascade.exe -data dt -vec pos.vec -bg neg.txt -numPos '+str(pos_real_num)+' -numNeg '+str(pos_real_num)+' -numStages '+stage+' -minHitRate 0.999 -maxFalseAlarmRate 0.5 -weightTrimRate 0.95 -maxDepth 1 -mode ALL -precalcValbufSize 4096 -precalcdxBufSize 4096   -w '+str(pos_width)+' -h '+str(pos_high)+LBP)
     
     print ('done all')
-    input('press any key to continue:')
+
+    g.msgbox('完成，生成的cascade.xml文件在dt文件夹下，注意查收')

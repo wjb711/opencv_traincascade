@@ -81,16 +81,18 @@ if __name__ == "__main__":
     promotion='press ESC'
     #最下角的提示
 
-    cap=cv2.VideoCapture(0)
+    cap=cv2.VideoCapture(2)
     cv2.namedWindow('output',0)
     print ('hello')
     #faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-    faceCascade = cv2.CascadeClassifier('C:\\temp\\pos2\\dt\\cascade.xml')
+    faceCascade = cv2.CascadeClassifier('C:\\temp\\pos4\\dt\\cascade.xml')
     #人脸发现的xml路径， 发现是发现有没有人脸， 识别是识别是哪张脸不一样。
     print ('hello1')
-    cap.set(3,1280)
-    cap.set(4,960)
-    while cv2.waitKey(1)!=ord('q'):
+    #cap.set(3,1280)
+    #cap.set(4,960)
+    mylist=[]
+    i=0
+    while i<20:
         time=datetime.datetime.now().strftime('%y-%m-%d %H:%M:%S')
         #日期时间显示在左上角
         _,frame=cap.read()
@@ -101,13 +103,14 @@ if __name__ == "__main__":
 
 
         #rects = faceCascade.detectMultiScale(copy0, 1.1, 2, cv2.CASCADE_SCALE_IMAGE, (20,20))
-        rects = faceCascade.detectMultiScale(copy0, 1.2, 10, 0)
+        rects = faceCascade.detectMultiScale(copy0, 1.01, 5, 0)
         #print (len(rects))
   
         for x1, y1, x2, y2 in rects:
             
             #cv2.rectangle(copy0, (x1, y1), (x1+x2, y1+y2), (127, 255, 0), 2)
-            roi=frame[y1-20:y1+int(y2*1.1), x1-20:x1+int(x2*1.1)]
+            roi=frame[y1:y1+y2, x1:x1+x2]
+            
             
             #cv2.imwrite('a4.jpg',roi)
             value=image_colorfulness(roi)
@@ -115,9 +118,9 @@ if __name__ == "__main__":
             if value >50:
                 cv2.rectangle(copy0, (x1, y1), (x1+x2, y1+y2), (127, 255, 0), 2)
                 #print (value)
-                image = Image.fromarray(cv2.cvtColor(roi,cv2.COLOR_BGR2RGB)) 
-                chepai=pytesseract.image_to_string(image,lang = 'chepai')
-                print (chepai)
+                #image = Image.fromarray(cv2.cvtColor(roi,cv2.COLOR_BGR2RGB)) 
+                #chepai=pytesseract.image_to_string(image,lang = 'chepai1')
+                #print (chepai)
                 #print ('len is ',len(chepai))
                 #if '赣' in chepai:
                 #    print ('yes, 赣 in chepai')
@@ -132,9 +135,67 @@ if __name__ == "__main__":
                 #    #print ('yes',len(chepai))
                 #    pass
                 #print ('done')
-                resize=cv2.resize(roi,(300,150))
-                copy0[0:150,0:300]=resize
-                cv2.imshow('output',copy0)
+                #resize=cv2.resize(roi,(300,150))
+                kernel_size = (11, 11);
+                sigma = 1.5
+                img = cv2.GaussianBlur(roi, kernel_size, sigma)
+                gray=cv2.cvtColor(img,6)
+                ret, gray = cv2.threshold(gray,127,255,cv2.THRESH_BINARY_INV)
+                kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2, 2))
+                gray = cv2.erode(gray,kernel)
+
+
+                
+                _,contours, hierarchy = cv2.findContours(gray,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+                for c in contours:
+    # find bounding box coordinates
+    # 现计算出一个简单的边界框
+                    x, y, w, h = cv2.boundingRect(c)   # 将轮廓信息转换成(x, y)坐标，并加上矩形的高度和宽度
+                    #cv2.rectangle(frame, (x,y), (x+w, y+h), (0, 255, 0), 2)  # 画出矩形
+                    if h >20:
+                        hello=roi[y:y+h,x:x+w]
+                        cv2.imshow('frame',hello)
+                #cv2.drawContours(frame,contours,-1,(0,0,255),3)
+                
+                
+                #ret,gray=cv2.threshold(gray,140,255,cv2.THRESH_BINARY_INV)
+                #gray = cv2.Canny(gray, 80, 150)  
+                #x = cv2.Sobel(gray,cv2.CV_16S,1,0)  
+                #y = cv2.Sobel(gray,cv2.CV_16S,0,1)  
+  
+                #absX = cv2.convertScaleAbs(x)   # 转回uint8  
+                #absY = cv2.convertScaleAbs(y)  
+  
+                #dst = cv2.addWeighted(absX,0.5,absY,0.5,0)
+                #ret,dst=cv2.threshold(dst,40,255,cv2.THRESH_BINARY)
+                #_,contours, hierarchy = cv2.findContours(dst, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# 画出轮廓，-1,表示所有轮廓，画笔颜色为(0, 255, 0)，即Green，粗细为3
+                #cv2.drawContours(dst, contours, -1, (0, 255, 0), 2)
+                
+                #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(2, 2))
+                #dst = cv2.erode(dst,kernel)
+                #for cnt in contours:
+                #    if cv2.contourArea(cnt)>10:
+                #cv2.drawContours(copy0, contours, -1, (0, 255, 0), 3)
+                #cv2.imshow('dst',copy0)
+#腐蚀图像  
+                #dst = cv2.erode(dst,kernel)
+                #dst = cv2.erode(dst,kernel) 
+                #kernel = cv2.getStructuringElement(cv2.MORPH_RECT,(5, 5))  
+  
+#闭运算  
+                #closed = cv2.morphologyEx(dst, cv2.MORPH_CLOSE, kernel)
+                #closed = cv2.morphologyEx(closed, cv2.MORPH_CLOSE, kernel) 
+
+                gray=cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
+                image = Image.fromarray(cv2.cvtColor(hello,cv2.COLOR_BGR2RGB)) 
+                chepai=pytesseract.image_to_string(image,lang = 'chepai')
+                mylist.append(chepai)
+                i=i+1
+                #print (chepai)
+                #copy0[0:150,0:300]=gray
+        cv2.imshow('output',copy0)
                 #cv2.imshow('roi',resize)
                 #input('a')
                 #cv2.imwrite('a4.jpg',roi)
@@ -150,7 +211,22 @@ if __name__ == "__main__":
     #尝试获得命令的第一个参数， 也就是图片的名字
             except:
                 pass
-            
+    myset = set(mylist)
+    print (myset)
+    #myset是另外一个列表，里面的内容是mylist里面的无重复 项
+    dict1={}
+    max=0
+    for item in myset:
+      #print("the %d has found %d" %(item,mylist.count(item)))
+      #print (mylist.count(item))
+      if mylist.count(item)>max:
+          max=mylist.count(item)
+          max_item=item
+      dict1[item]=mylist.count(item)
+    print ('dict is',dict1)
+    print ('max_item is :',max_item)
+    print ('max time is :',max)
+           
 
 
     cap.release()
